@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Scuola Di Danza Gabriella Thrull</title>
+  <style>
+    :root {
+      --gold: #C4995A; --charcoal: #1A1A1A; --white: #FFFFFF;
+      --border: #E2DDD4; --gray: #5E5E5E; --sidebar-w: 230px;
+      --red: #D94F4F; --green: #3C9E6E; --blue: #3B7DD8; --orange: #D97B3C;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #F4F4F2; color: var(--charcoal); font-size: 14px; }
+
+    /* LOGIN */
+    #login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--charcoal); }
+    .login-box { background: var(--white); border-radius: 8px; padding: 48px 40px; width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .login-logo { text-align: center; margin-bottom: 24px; }
+    .login-logo h1 { font-size: 17px; font-weight: 700; color: var(--charcoal); letter-spacing: 0.05em; }
+    .login-logo p { font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 4px; }
+    .login-lang { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
+    .login-lang button { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); background: none; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--gray); }
+    .login-lang button.active { background: var(--charcoal); color: var(--white); border-color: var(--charcoal); }
+    .login-box label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray); margin-bottom: 6px; margin-top: 18px; }
+    .login-box input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; outline: none; }
+    .login-box input:focus { border-color: var(--gold); }
+    .login-btn { width: 100%; margin-top: 24px; padding: 12px; background: var(--charcoal); color: var(--white); border: none; border-radius: 4px; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+    .login-btn:hover { background: var(--gold); }
+    .login-error { color: var(--red); font-size: 12px; margin-top: 12px; text-align: center; display: none; }
+
+    /* LAYOUT */
+    #app { display: none; height: 100vh; }
+    #app.visible { display: flex; }
+    .sidebar { width: var(--sidebar-w); background: var(--charcoal); color: var(--white); display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-brand { padding: 22px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-brand h2 { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--gold); }
+    .sidebar-brand p { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    .sidebar-nav { flex: 1; padding: 12px 0; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; color: rgba(255,255,255,0.55); font-size: 13px; font-weight: 500; transition: all 0.2s; border-left: 3px solid transparent; }
+    .nav-item:hover { color: var(--white); background: rgba(255,255,255,0.05); }
+    .nav-item.active { color: var(--white); border-left-color: var(--gold); background: rgba(196,153,90,0.12); }
+    .nav-item .icon { font-size: 15px; width: 20px; text-align: center; }
+    .sidebar-footer { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 10px; }
+    .lang-switcher-admin { display: flex; gap: 6px; }
+    .lang-btn-admin { flex: 1; padding: 5px 0; background: none; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.45); border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; }
+    .lang-btn-admin.active { background: var(--gold); color: var(--white); border-color: var(--gold); }
+    .logout-btn { background: none; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.45); padding: 7px 16px; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%; }
+    .logout-btn:hover { color: var(--white); border-color: rgba(255,255,255,0.4); }
+
+    .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; }
+    .topbar h1 { font-size: 17px; font-weight: 600; }
+    .topbar-right { font-size: 12px; color: var(--gray); }
+    .content { padding: 24px; flex: 1; }
+
+    /* PAGES */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+    .stat-card { background: var(--white); border-radius: 8px; padding: 18px; border: 1px solid var(--border); }
+    .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray); }
+    .stat-value { font-size: 30px; font-weight: 700; margin-top: 6px; }
+    .stat-sub { font-size: 12px; color: var(--gray); margin-top: 3px; }
+    .stat-card.gold .stat-value { color: var(--gold); }
+
+    /* TABLES */
+    .card { background: var(--white); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
+    .card-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .card-header h3 { font-size: 14px; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #F8F7F5; padding: 9px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--gray); font-weight: 600; border-bottom: 1px solid var(--border); }
+    td { padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #FAFAF7; }
+
+    /* BADGES */
+    .badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-new        { background: #EBF3FF; color: var(--blue); }
+    .badge-processing { background: #FFF4E5; color: var(--orange); }
+    .badge-confirmed  { background: #E6F7EF; color: var(--green); }
+    .badge-rejected   { background: #FDEAEA; color: var(--red); }
+
+    /* BUTTONS */
+    .btn { padding: 7px 14px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; }
+    .btn-primary { background: var(--charcoal); color: var(--white); }
+    .btn-primary:hover { background: var(--gold); }
+    .btn-outline { background: none; border: 1px solid var(--border); color: var(--charcoal); }
+    .btn-outline:hover { border-color: var(--charcoal); }
+    .btn-danger { background: none; border: 1px solid #FECACA; color: var(--red); }
+    .btn-danger:hover { background: #FEF2F2; }
+    .btn-sm { padding: 4px 10px; font-size: 11px; }
+    .btn-gold { background: var(--gold); color: var(--white); }
+
+    /* FILTERS */
+    .filters { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--white); cursor: pointer; font-size: 12px; font-weight: 500; color: var(--gray); }
+    .filter-btn.active { background: var(--charcoal); color: var(--white); border-color: var(--charcoal); }
+
+    /* STATUS SELECT */
+    .status-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; background: var(--white); cursor: pointer; }
+
+    /* SCHEDULE */
+    .direction-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .dir-tab { padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--white); cursor: pointer; font-size: 13px; font-weight: 500; }
+    .dir-tab.active { background: var(--charcoal); color: var(--white); border-color: var(--charcoal); }
+    .slot-row { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .slot-row input { padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; flex: 1; }
+    .add-slot-row { margin-top: 12px; display: flex; gap: 10px; }
+    .add-slot-row input { padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; flex: 1; }
+
+    /* SETTINGS */
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .setting-item { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+    .setting-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--gray); margin-bottom: 8px; font-weight: 600; }
+    .setting-input { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; }
+    .setting-input:focus { outline: none; border-color: var(--gold); }
+    .setting-save { margin-top: 10px; }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: var(--white); border-radius: 8px; padding: 28px; width: 480px; max-width: 90vw; }
+    .modal-box h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+    .modal-box textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; height: 120px; resize: vertical; font-family: inherit; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--charcoal); color: var(--white); padding: 11px 18px; border-radius: 6px; font-size: 13px; z-index: 9999; opacity: 0; transform: translateY(8px); transition: all 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: none; }
+
+    .loading { text-align: center; padding: 32px; color: var(--gray); font-size: 13px; }
+    .empty { padding: 40px; text-align: center; color: var(--gray); font-size: 13px; }
+    .new-badge { margin-left: auto; background: var(--red); color: white; border-radius: 10px; padding: 1px 7px; font-size: 10px; display: none; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>GABRIELLA THRULL</h1>
+      <p data-t="login-subtitle">Pannello Amministratore</p>
+    </div>
+    <div class="login-lang">
+      <button onclick="setLang('it')" data-lang="it" class="active">IT</button>
+      <button onclick="setLang('en')" data-lang="en">EN</button>
+      <button onclick="setLang('ru')" data-lang="ru">RU</button>
+    </div>
+    <label data-t="login-email">Email</label>
+    <input type="email" id="login-email" placeholder="admin@example.com">
+    <label data-t="login-password">Password</label>
+    <input type="password" id="login-password" placeholder="••••••••">
+    <button class="login-btn" onclick="doLogin()" data-t="login-btn">Accedi</button>
+    <div class="login-error" id="login-error" data-t="login-error">Email o password non corretti.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h2>ADMIN PANEL</h2>
+      <p>Scuola Di Danza</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard',this)">
+        <span class="icon">📊</span> <span data-t="nav-dashboard">Dashboard</span>
+      </div>
+      <div class="nav-item" data-page="applications" onclick="showPage('applications',this)">
+        <span class="icon">📥</span> <span data-t="nav-applications">Richieste</span>
+        <span class="new-badge" id="badge-new"></span>
+      </div>
+      <div class="nav-item" data-page="students" onclick="showPage('students',this)">
+        <span class="icon">👥</span> <span data-t="nav-students">Allieve</span>
+      </div>
+      <div class="nav-item" data-page="schedule" onclick="showPage('schedule',this)">
+        <span class="icon">📅</span> <span data-t="nav-schedule">Orario</span>
+      </div>
+      <div class="nav-item" data-page="prices" onclick="showPage('prices',this)">
+        <span class="icon">💶</span> <span data-t="nav-prices">Prezzi</span>
+      </div>
+      <div class="nav-item" data-page="contacts" onclick="showPage('contacts',this)">
+        <span class="icon">📍</span> <span data-t="nav-contacts">Contatti</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="lang-switcher-admin">
+        <button class="lang-btn-admin active" onclick="setLang('it')" data-lang="it">IT</button>
+        <button class="lang-btn-admin" onclick="setLang('en')" data-lang="en">EN</button>
+        <button class="lang-btn-admin" onclick="setLang('ru')" data-lang="ru">RU</button>
+      </div>
+      <button class="logout-btn" onclick="doLogout()" data-t="logout">Esci ↗</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <h1 id="page-title" data-t="nav-dashboard">Dashboard</h1>
+      <div class="topbar-right" id="admin-email-display"></div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card gold">
+            <div class="stat-label" data-t="stat-total-label">Richieste totali</div>
+            <div class="stat-value" id="stat-total">—</div>
+            <div class="stat-sub" data-t="stat-total-sub">tutte le richieste</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label" data-t="stat-new-label">Nuove</div>
+            <div class="stat-value" id="stat-new">—</div>
+            <div class="stat-sub" data-t="stat-new-sub">da elaborare</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label" data-t="stat-confirmed-label">Confermate</div>
+            <div class="stat-value" id="stat-confirmed">—</div>
+            <div class="stat-sub" data-t="stat-confirmed-sub">allieve attive</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label" data-t="stat-month-label">Questo mese</div>
+            <div class="stat-value" id="stat-month">—</div>
+            <div class="stat-sub" data-t="stat-month-sub">nuove richieste</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3 data-t="recent-title">Ultime richieste</h3>
+            <button class="btn btn-outline btn-sm" onclick="showPage('applications',document.querySelector('[data-page=applications]'))" data-t="btn-see-all">Vedi tutte</button>
+          </div>
+          <table>
+            <thead><tr>
+              <th data-t="col-name">Nome</th>
+              <th data-t="col-course">Corso</th>
+              <th data-t="col-date">Data</th>
+              <th data-t="col-status">Stato</th>
+            </tr></thead>
+            <tbody id="recent-applications"><tr><td colspan="4" class="loading" data-t="loading">Caricamento...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- APPLICATIONS -->
+      <div class="page" id="page-applications">
+        <div class="filters">
+          <button class="filter-btn active" onclick="filterApps('all',this)"    data-t="filter-all">Tutte</button>
+          <button class="filter-btn"        onclick="filterApps('new',this)"    data-t="filter-new">Nuove</button>
+          <button class="filter-btn"        onclick="filterApps('processing',this)" data-t="filter-processing">In elaborazione</button>
+          <button class="filter-btn"        onclick="filterApps('confirmed',this)"  data-t="filter-confirmed">Confermate</button>
+          <button class="filter-btn"        onclick="filterApps('rejected',this)"   data-t="filter-rejected">Rifiutate</button>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3 data-t="nav-applications">Richieste</h3>
+            <button class="btn btn-outline btn-sm" onclick="loadApplications()" data-t="btn-refresh">↻ Aggiorna</button>
+          </div>
+          <table>
+            <thead><tr>
+              <th data-t="col-name">Nome</th>
+              <th data-t="col-contact">Contatto</th>
+              <th data-t="col-course">Corso</th>
+              <th data-t="col-message">Messaggio</th>
+              <th data-t="col-date">Data</th>
+              <th data-t="col-status">Stato</th>
+              <th data-t="col-notes">Note</th>
+            </tr></thead>
+            <tbody id="applications-table"><tr><td colspan="7" class="loading" data-t="loading">Caricamento...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- STUDENTS -->
+      <div class="page" id="page-students">
+        <div class="card">
+          <div class="card-header">
+            <h3 data-t="nav-students">Allieve</h3>
+            <span style="font-size:12px;color:var(--gray)" data-t="students-note">= chi ha inviato almeno una richiesta</span>
+          </div>
+          <table>
+            <thead><tr>
+              <th data-t="col-name">Nome</th>
+              <th>Email</th>
+              <th data-t="col-phone">Telefono</th>
+              <th data-t="col-course">Corso</th>
+              <th data-t="col-first-req">Prima richiesta</th>
+              <th data-t="col-status">Stato</th>
+            </tr></thead>
+            <tbody id="students-table"><tr><td colspan="6" class="loading" data-t="loading">Caricamento...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SCHEDULE -->
+      <div class="page" id="page-schedule">
+        <div class="direction-tabs" id="dir-tabs">
+          <div class="dir-tab active" data-dir="bambini" onclick="selectDir('bambini',this)">🩰 Bambini</div>
+          <div class="dir-tab" data-dir="pro"     onclick="selectDir('pro',this)">⭐ Professionisti</div>
+          <div class="dir-tab" data-dir="body"    onclick="selectDir('body',this)">💪 Body Ballet</div>
+          <div class="dir-tab" data-dir="stretch" onclick="selectDir('stretch',this)">🤸 Stretching</div>
+          <div class="dir-tab" data-dir="online"  onclick="selectDir('online',this)">💻 Online</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3 id="schedule-dir-title">Bambini — Orario</h3></div>
+          <div style="padding:20px" id="schedule-slots-container"><div class="loading" data-t="loading">Caricamento...</div></div>
+          <div style="padding:0 20px 20px">
+            <div class="add-slot-row">
+              <input type="text" id="new-day"  data-t-ph="ph-day">
+              <input type="text" id="new-time" data-t-ph="ph-time" style="max-width:180px">
+              <input type="text" id="new-note" data-t-ph="ph-note" style="max-width:160px">
+              <button class="btn btn-gold" onclick="addSlot()" data-t="btn-add">+ Aggiungi</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRICES -->
+      <div class="page" id="page-prices">
+        <div class="settings-grid" id="prices-grid"><div class="loading" data-t="loading">Caricamento...</div></div>
+      </div>
+
+      <!-- CONTACTS -->
+      <div class="page" id="page-contacts">
+        <div class="settings-grid" id="contacts-grid"><div class="loading" data-t="loading">Caricamento...</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- NOTES MODAL -->
+<div class="modal-overlay" id="notes-modal">
+  <div class="modal-box">
+    <h3 data-t="notes-title">Note interne</h3>
+    <textarea id="notes-textarea" data-t-ph="notes-ph"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeNotesModal()" data-t="btn-cancel">Annulla</button>
+      <button class="btn btn-primary" onclick="saveNotes()"       data-t="btn-save">Salva</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============================================================
+   TRANSLATIONS
+   ============================================================ */
+const T = {
+  it: {
+    'login-subtitle': 'Pannello Amministratore',
+    'login-email': 'Email',
+    'login-password': 'Password',
+    'login-btn': 'Accedi',
+    'login-error': 'Email o password non corretti.',
+    'nav-dashboard': 'Dashboard',
+    'nav-applications': 'Richieste',
+    'nav-students': 'Allieve',
+    'nav-schedule': 'Orario',
+    'nav-prices': 'Prezzi',
+    'nav-contacts': 'Contatti',
+    'logout': 'Esci ↗',
+    'loading': 'Caricamento...',
+    'stat-total-label': 'Richieste totali',
+    'stat-total-sub': 'tutte le richieste',
+    'stat-new-label': 'Nuove',
+    'stat-new-sub': 'da elaborare',
+    'stat-confirmed-label': 'Confermate',
+    'stat-confirmed-sub': 'allieve attive',
+    'stat-month-label': 'Questo mese',
+    'stat-month-sub': 'nuove richieste',
+    'recent-title': 'Ultime richieste',
+    'btn-see-all': 'Vedi tutte',
+    'btn-refresh': '↻ Aggiorna',
+    'btn-add': '+ Aggiungi',
+    'btn-save': 'Salva',
+    'btn-cancel': 'Annulla',
+    'filter-all': 'Tutte',
+    'filter-new': 'Nuove',
+    'filter-processing': 'In elaborazione',
+    'filter-confirmed': 'Confermate',
+    'filter-rejected': 'Rifiutate',
+    'col-name': 'Nome',
+    'col-contact': 'Contatto',
+    'col-course': 'Corso',
+    'col-message': 'Messaggio',
+    'col-date': 'Data',
+    'col-status': 'Stato',
+    'col-notes': 'Note',
+    'col-phone': 'Telefono',
+    'col-first-req': 'Prima richiesta',
+    'students-note': '= chi ha inviato almeno una richiesta',
+    'notes-title': 'Note interne',
+    'notes-ph': 'Aggiungi note su questa richiesta...',
+    'ph-day': 'es. Lunedì / Monday',
+    'ph-time': 'es. 17:30 – 18:30',
+    'ph-note': 'Nota (opz.)',
+    'status-new': '🔵 Nuova',
+    'status-processing': '🟠 In elaborazione',
+    'status-confirmed': '🟢 Confermata',
+    'status-rejected': '🔴 Rifiutata',
+    'badge-new': 'Nuova',
+    'badge-processing': 'In elaborazione',
+    'badge-confirmed': 'Confermata',
+    'badge-rejected': 'Rifiutata',
+    'btn-notes': '📝 Note',
+    'btn-add-note': '+ Nota',
+    'saved': 'Salvato ✓',
+    'slot-saved': 'Orario salvato ✓',
+    'slot-added': 'Slot aggiunto ✓',
+    'slot-deleted': 'Slot eliminato',
+    'notes-saved': 'Note salvate ✓',
+    'error-save': 'Errore nel salvataggio',
+    'confirm-delete': 'Eliminare questo slot?',
+    'fill-fields': 'Inserisci giorno e orario',
+    'no-applications': 'Nessuna richiesta trovata',
+    'no-students': 'Nessuna allieva registrata',
+    'no-schedule': 'Nessun orario. Aggiungi uno slot qui sotto.',
+    'status-update': 'Stato aggiornato',
+  },
+  en: {
+    'login-subtitle': 'Administrator Panel',
+    'login-email': 'Email',
+    'login-password': 'Password',
+    'login-btn': 'Sign In',
+    'login-error': 'Wrong email or password.',
+    'nav-dashboard': 'Dashboard',
+    'nav-applications': 'Requests',
+    'nav-students': 'Students',
+    'nav-schedule': 'Schedule',
+    'nav-prices': 'Prices',
+    'nav-contacts': 'Contacts',
+    'logout': 'Sign out ↗',
+    'loading': 'Loading...',
+    'stat-total-label': 'Total requests',
+    'stat-total-sub': 'all requests',
+    'stat-new-label': 'New',
+    'stat-new-sub': 'to process',
+    'stat-confirmed-label': 'Confirmed',
+    'stat-confirmed-sub': 'active students',
+    'stat-month-label': 'This month',
+    'stat-month-sub': 'new requests',
+    'recent-title': 'Latest requests',
+    'btn-see-all': 'View all',
+    'btn-refresh': '↻ Refresh',
+    'btn-add': '+ Add',
+    'btn-save': 'Save',
+    'btn-cancel': 'Cancel',
+    'filter-all': 'All',
+    'filter-new': 'New',
+    'filter-processing': 'Processing',
+    'filter-confirmed': 'Confirmed',
+    'filter-rejected': 'Rejected',
+    'col-name': 'Name',
+    'col-contact': 'Contact',
+    'col-course': 'Course',
+    'col-message': 'Message',
+    'col-date': 'Date',
+    'col-status': 'Status',
+    'col-notes': 'Notes',
+    'col-phone': 'Phone',
+    'col-first-req': 'First request',
+    'students-note': '= anyone who submitted a request',
+    'notes-title': 'Internal notes',
+    'notes-ph': 'Add notes about this request...',
+    'ph-day': 'e.g. Monday / Lunedì',
+    'ph-time': 'e.g. 17:30 – 18:30',
+    'ph-note': 'Note (opt.)',
+    'status-new': '🔵 New',
+    'status-processing': '🟠 Processing',
+    'status-confirmed': '🟢 Confirmed',
+    'status-rejected': '🔴 Rejected',
+    'badge-new': 'New',
+    'badge-processing': 'Processing',
+    'badge-confirmed': 'Confirmed',
+    'badge-rejected': 'Rejected',
+    'btn-notes': '📝 Notes',
+    'btn-add-note': '+ Note',
+    'saved': 'Saved ✓',
+    'slot-saved': 'Schedule saved ✓',
+    'slot-added': 'Slot added ✓',
+    'slot-deleted': 'Slot deleted',
+    'notes-saved': 'Notes saved ✓',
+    'error-save': 'Save error',
+    'confirm-delete': 'Delete this slot?',
+    'fill-fields': 'Enter day and time',
+    'no-applications': 'No requests found',
+    'no-students': 'No students registered',
+    'no-schedule': 'No schedule. Add a slot below.',
+    'status-update': 'Status updated',
+  },
+  ru: {
+    'login-subtitle': 'Панель администратора',
+    'login-email': 'Email',
+    'login-password': 'Пароль',
+    'login-btn': 'Войти',
+    'login-error': 'Неверный email или пароль.',
+    'nav-dashboard': 'Дашборд',
+    'nav-applications': 'Заявки',
+    'nav-students': 'Ученики',
+    'nav-schedule': 'Расписание',
+    'nav-prices': 'Цены',
+    'nav-contacts': 'Контакты',
+    'logout': 'Выйти ↗',
+    'loading': 'Загрузка...',
+    'stat-total-label': 'Всего заявок',
+    'stat-total-sub': 'все заявки',
+    'stat-new-label': 'Новые',
+    'stat-new-sub': 'требуют обработки',
+    'stat-confirmed-label': 'Подтверждённые',
+    'stat-confirmed-sub': 'активные ученики',
+    'stat-month-label': 'В этом месяце',
+    'stat-month-sub': 'новых заявок',
+    'recent-title': 'Последние заявки',
+    'btn-see-all': 'Смотреть все',
+    'btn-refresh': '↻ Обновить',
+    'btn-add': '+ Добавить',
+    'btn-save': 'Сохранить',
+    'btn-cancel': 'Отмена',
+    'filter-all': 'Все',
+    'filter-new': 'Новые',
+    'filter-processing': 'В обработке',
+    'filter-confirmed': 'Подтверждённые',
+    'filter-rejected': 'Отклонённые',
+    'col-name': 'Имя',
+    'col-contact': 'Контакт',
+    'col-course': 'Курс',
+    'col-message': 'Сообщение',
+    'col-date': 'Дата',
+    'col-status': 'Статус',
+    'col-notes': 'Заметки',
+    'col-phone': 'Телефон',
+    'col-first-req': 'Первая заявка',
+    'students-note': '= те, кто отправил хотя бы одну заявку',
+    'notes-title': 'Внутренние заметки',
+    'notes-ph': 'Добавить заметки по этой заявке...',
+    'ph-day': 'напр. Понедельник / Monday',
+    'ph-time': 'напр. 17:30 – 18:30',
+    'ph-note': 'Заметка (необяз.)',
+    'status-new': '🔵 Новая',
+    'status-processing': '🟠 В обработке',
+    'status-confirmed': '🟢 Подтверждена',
+    'status-rejected': '🔴 Отклонена',
+    'badge-new': 'Новая',
+    'badge-processing': 'В обработке',
+    'badge-confirmed': 'Подтверждена',
+    'badge-rejected': 'Отклонена',
+    'btn-notes': '📝 Заметки',
+    'btn-add-note': '+ Заметка',
+    'saved': 'Сохранено ✓',
+    'slot-saved': 'Расписание сохранено ✓',
+    'slot-added': 'Слот добавлен ✓',
+    'slot-deleted': 'Слот удалён',
+    'notes-saved': 'Заметки сохранены ✓',
+    'error-save': 'Ошибка сохранения',
+    'confirm-delete': 'Удалить этот слот?',
+    'fill-fields': 'Введите день и время',
+    'no-applications': 'Заявок не найдено',
+    'no-students': 'Учеников нет',
+    'no-schedule': 'Расписание пустое. Добавьте слот ниже.',
+    'status-update': 'Статус обновлён',
+  }
+};
+
+let lang = localStorage.getItem('adminLang') || 'it';
+
+function t(key) { return T[lang][key] || T.it[key] || key; }
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('adminLang', l);
+  applyLang();
+}
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const key = el.getAttribute('data-t');
+    el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-t-ph]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-t-ph'));
+  });
+  document.querySelectorAll('[data-lang]').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+  });
+  // Re-render dynamic content if visible
+  const activePage = document.querySelector('.page.active');
+  if (activePage) {
+    const pageId = activePage.id.replace('page-', '');
+    if (pageId === 'applications') renderApplications();
+    if (pageId === 'dashboard') updateRecentTable();
+  }
+}
+
+/* ============================================================
+   SUPABASE
+   ============================================================ */
+const SUPABASE_URL = 'https://xfvzdnkqltmjnrbltjiw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_OKzIEDhjDudS15hXaqBMRw_D5HkyNRh';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let allApplications = [];
+let currentFilter = 'all';
+let currentDir = 'bambini';
+let currentNotesId = null;
+
+const DIR_NAMES = {
+  bambini: '🩰 Bambini', pro: '⭐ Professionisti',
+  body: '💪 Body Ballet', stretch: '🤸 Stretching', online: '💻 Online'
+};
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+  if (error) { errEl.style.display = 'block'; return; }
+  onLoggedIn(data.user);
+}
+
+async function doLogout() {
+  await db.auth.signOut();
+  location.reload();
+}
+
+function onLoggedIn(user) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('admin-email-display').textContent = user.email;
+  loadDashboard();
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function showPage(pageId, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  const titleEl = document.getElementById('page-title');
+  titleEl.textContent = t('nav-' + pageId);
+
+  if (pageId === 'dashboard')    loadDashboard();
+  if (pageId === 'applications') loadApplications();
+  if (pageId === 'students')     loadStudents();
+  if (pageId === 'schedule')     loadSchedule(currentDir);
+  if (pageId === 'prices')       loadSettings('price');
+  if (pageId === 'contacts')     loadSettings('contact');
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+async function loadDashboard() {
+  const { data } = await db.from('applications').select('*').order('created_at', { ascending: false });
+  if (!data) return;
+  allApplications = data;
+
+  const now = new Date();
+  const thisMonth = data.filter(a => {
+    const d = new Date(a.created_at);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const newOnes = data.filter(a => a.status === 'new');
+
+  document.getElementById('stat-total').textContent     = data.length;
+  document.getElementById('stat-new').textContent       = newOnes.length;
+  document.getElementById('stat-confirmed').textContent = data.filter(a => a.status === 'confirmed').length;
+  document.getElementById('stat-month').textContent     = thisMonth.length;
+
+  const badge = document.getElementById('badge-new');
+  badge.textContent = newOnes.length;
+  badge.style.display = newOnes.length > 0 ? 'inline' : 'none';
+
+  updateRecentTable();
+}
+
+function updateRecentTable() {
+  const tbody = document.getElementById('recent-applications');
+  if (!tbody) return;
+  const rows = allApplications.slice(0, 8);
+  tbody.innerHTML = rows.length
+    ? rows.map(a => `
+        <tr>
+          <td><strong>${esc(a.name)}</strong></td>
+          <td>${esc(a.course || '—')}</td>
+          <td>${fmtDate(a.created_at)}</td>
+          <td>${badge(a.status)}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="4" class="empty">${t('no-applications')}</td></tr>`;
+}
+
+/* ============================================================
+   APPLICATIONS
+   ============================================================ */
+async function loadApplications() {
+  const { data } = await db.from('applications').select('*').order('created_at', { ascending: false });
+  allApplications = data || [];
+  renderApplications();
+}
+
+function renderApplications() {
+  const list = currentFilter === 'all' ? allApplications : allApplications.filter(a => a.status === currentFilter);
+  const tbody = document.getElementById('applications-table');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty">${t('no-applications')}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(a => `
+    <tr>
+      <td><strong>${esc(a.name)}</strong></td>
+      <td>${esc(a.email)}<br><span style="color:var(--gray);font-size:12px">${esc(a.phone||'')}</span></td>
+      <td>${esc(a.course||'—')}</td>
+      <td style="max-width:180px;font-size:12px">${esc(a.message||'—')}</td>
+      <td style="white-space:nowrap">${fmtDate(a.created_at)}</td>
+      <td>
+        <select class="status-select" onchange="updateStatus('${a.id}',this.value)">
+          <option value="new"        ${a.status==='new'?'selected':''}>${t('status-new')}</option>
+          <option value="processing" ${a.status==='processing'?'selected':''}>${t('status-processing')}</option>
+          <option value="confirmed"  ${a.status==='confirmed'?'selected':''}>${t('status-confirmed')}</option>
+          <option value="rejected"   ${a.status==='rejected'?'selected':''}>${t('status-rejected')}</option>
+        </select>
+      </td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="openNotesModal('${a.id}',\`${esc(a.notes||'')}\`)">
+          ${a.notes ? t('btn-notes') : t('btn-add-note')}
+        </button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterApps(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderApplications();
+}
+
+async function updateStatus(id, status) {
+  const { error } = await db.from('applications').update({ status }).eq('id', id);
+  if (error) { toast(t('error-save')); return; }
+  const idx = allApplications.findIndex(a => a.id === id);
+  if (idx !== -1) allApplications[idx].status = status;
+  toast(t('status-update'));
+}
+
+/* ============================================================
+   STUDENTS
+   ============================================================ */
+async function loadStudents() {
+  const { data } = await db.from('applications').select('*').order('created_at', { ascending: true });
+  const tbody = document.getElementById('students-table');
+  if (!data || !data.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">${t('no-students')}</td></tr>`;
+    return;
+  }
+  const map = {};
+  data.forEach(a => { map[a.email] = a; });
+  tbody.innerHTML = Object.values(map).map(s => `
+    <tr>
+      <td><strong>${esc(s.name)}</strong></td>
+      <td><a href="mailto:${esc(s.email)}" style="color:var(--gold)">${esc(s.email)}</a></td>
+      <td>${esc(s.phone||'—')}</td>
+      <td>${esc(s.course||'—')}</td>
+      <td>${fmtDate(s.created_at)}</td>
+      <td>${badge(s.status)}</td>
+    </tr>`).join('');
+}
+
+/* ============================================================
+   SCHEDULE
+   ============================================================ */
+async function loadSchedule(dir) {
+  currentDir = dir;
+  document.getElementById('schedule-dir-title').textContent = (DIR_NAMES[dir]||dir) + ' — ' + t('nav-schedule');
+  const container = document.getElementById('schedule-slots-container');
+  container.innerHTML = `<div class="loading">${t('loading')}</div>`;
+
+  const { data } = await db.from('schedule').select('*').eq('direction', dir).order('sort_order');
+  if (!data || !data.length) {
+    container.innerHTML = `<p style="color:var(--gray);padding:8px 0">${t('no-schedule')}</p>`;
+    return;
+  }
+  container.innerHTML = data.map(s => `
+    <div class="slot-row" id="slot-${s.id}">
+      <input type="text" value="${esc(s.day)}" id="day-${s.id}" placeholder="${t('ph-day')}">
+      <input type="text" value="${esc(s.time_slot)}" id="time-${s.id}" placeholder="${t('ph-time')}" style="max-width:180px">
+      <input type="text" value="${esc(s.note||'')}" id="note-${s.id}" placeholder="${t('ph-note')}" style="max-width:160px">
+      <button class="btn btn-outline btn-sm" onclick="saveSlot('${s.id}')">${t('btn-save')}</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteSlot('${s.id}')">✕</button>
+    </div>`).join('');
+}
+
+function selectDir(dir, el) {
+  document.querySelectorAll('.dir-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadSchedule(dir);
+}
+
+async function saveSlot(id) {
+  const day  = document.getElementById('day-' + id).value.trim();
+  const time = document.getElementById('time-' + id).value.trim();
+  const note = document.getElementById('note-' + id).value.trim();
+  const { error } = await db.from('schedule').update({ day, time_slot: time, note }).eq('id', id);
+  if (error) { toast(t('error-save')); return; }
+  toast(t('slot-saved'));
+}
+
+async function deleteSlot(id) {
+  if (!confirm(t('confirm-delete'))) return;
+  await db.from('schedule').delete().eq('id', id);
+  document.getElementById('slot-' + id)?.remove();
+  toast(t('slot-deleted'));
+}
+
+async function addSlot() {
+  const day  = document.getElementById('new-day').value.trim();
+  const time = document.getElementById('new-time').value.trim();
+  const note = document.getElementById('new-note').value.trim();
+  if (!day || !time) { toast(t('fill-fields')); return; }
+  const { data: ex } = await db.from('schedule').select('sort_order').eq('direction', currentDir).order('sort_order', { ascending: false }).limit(1);
+  const nextOrder = (ex?.[0]?.sort_order || 0) + 1;
+  const { error } = await db.from('schedule').insert({ direction: currentDir, day, time_slot: time, note, sort_order: nextOrder });
+  if (error) { toast(t('error-save')); return; }
+  document.getElementById('new-day').value = '';
+  document.getElementById('new-time').value = '';
+  document.getElementById('new-note').value = '';
+  toast(t('slot-added'));
+  loadSchedule(currentDir);
+}
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+async function loadSettings(prefix) {
+  const gridId = prefix === 'price' ? 'prices-grid' : 'contacts-grid';
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = `<div class="loading">${t('loading')}</div>`;
+  const { data } = await db.from('settings').select('*').like('key', prefix + '%');
+  if (!data || !data.length) { grid.innerHTML = '<p>—</p>'; return; }
+  grid.innerHTML = data.map(s => `
+    <div class="setting-item">
+      <div class="setting-label">${esc(s.label||s.key)}</div>
+      <input class="setting-input" id="setting-${s.key}" type="text" value="${esc(s.value)}">
+      <div class="setting-save">
+        <button class="btn btn-primary btn-sm" onclick="saveSetting('${s.key}')">${t('btn-save')}</button>
+      </div>
+    </div>`).join('');
+}
+
+async function saveSetting(key) {
+  const value = document.getElementById('setting-' + key).value.trim();
+  const { error } = await db.from('settings').update({ value }).eq('key', key);
+  if (error) { toast(t('error-save')); return; }
+  toast(t('saved'));
+}
+
+/* ============================================================
+   NOTES MODAL
+   ============================================================ */
+function openNotesModal(id, currentNotes) {
+  currentNotesId = id;
+  document.getElementById('notes-textarea').value = currentNotes || '';
+  document.getElementById('notes-textarea').placeholder = t('notes-ph');
+  document.getElementById('notes-modal').classList.add('open');
+}
+function closeNotesModal() {
+  document.getElementById('notes-modal').classList.remove('open');
+  currentNotesId = null;
+}
+async function saveNotes() {
+  const notes = document.getElementById('notes-textarea').value;
+  await db.from('applications').update({ notes }).eq('id', currentNotesId);
+  const idx = allApplications.findIndex(a => a.id === currentNotesId);
+  if (idx !== -1) allApplications[idx].notes = notes;
+  closeNotesModal();
+  renderApplications();
+  toast(t('notes-saved'));
+}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/`/g,'&#96;');
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString(lang === 'ru' ? 'ru-RU' : lang === 'en' ? 'en-GB' : 'it-IT', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+function badge(s) {
+  const cls = { new:'badge-new', processing:'badge-processing', confirmed:'badge-confirmed', rejected:'badge-rejected' };
+  return `<span class="badge ${cls[s]||'badge-new'}">${t('badge-'+s)||s}</span>`;
+}
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+(async () => {
+  applyLang();
+  const { data: { session } } = await db.auth.getSession();
+  if (session) onLoggedIn(session.user);
+  document.getElementById('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+})();
+</script>
+</body>
+</html>
